@@ -11,12 +11,9 @@ public class Server {
         private final ServerSocket serverSocket;
         private final Map<String, List<ClientHandler>> chatRooms;
 
-        private final Map<String, List<ClientHandler>> privateChatRooms;
-
         public Server (ServerSocket serverSocket) {
             this.serverSocket = serverSocket;
             this.chatRooms = new HashMap<>();
-            this.privateChatRooms = new HashMap<>();
             chatRooms.put("public", new ArrayList<>());
         }
 
@@ -30,6 +27,7 @@ public class Server {
 
                     Thread thread = new Thread(clientHandler);
                     thread.start();
+                    printChatRooms();
                 }
             } catch (IOException e) {
                 closeServerSocket();
@@ -37,22 +35,25 @@ public class Server {
         }
 
     public synchronized void changeChatRoom(ClientHandler clientHandler, String newChatRoom) {
-        List<ClientHandler> currentChatRoom = chatRooms.get(clientHandler.getCurrentChatRoom());
-        if (currentChatRoom != null) {
-            currentChatRoom.remove(clientHandler);
-        } else {
-            currentChatRoom = privateChatRooms.get(clientHandler.getCurrentChatRoom());
-            if (currentChatRoom != null) {
-                currentChatRoom.remove(clientHandler);
-            }
+        
+        if(!chatRooms.containsKey(newChatRoom)){
+            chatRooms.put(newChatRoom, new ArrayList<>());
         }
 
-        if (newChatRoom.equals("public")) {
-            chatRooms.computeIfAbsent(newChatRoom, k -> new ArrayList<>()).add(clientHandler);
-        } else {
-            privateChatRooms.computeIfAbsent(newChatRoom, k -> new ArrayList<>()).add(clientHandler);
-        }
+        List<ClientHandler> newRoom = chatRooms.get(newChatRoom);
+        newRoom.add(clientHandler);
         clientHandler.setCurrentChatRoom(newChatRoom);
+        }
+
+    public void addClienToChatRoom(ClientHandler clientHandler, String chatRoom){
+        chatRooms.computeIfAbsent(chatRoom, k -> new ArrayList<>()).add(clientHandler);
+    }
+
+    public void removeClientFromChatRoom(ClientHandler clientHandler, String chatRoom){
+        List<ClientHandler> handlers = chatRooms.get(chatRoom);
+        if(handlers != null){
+            handlers.remove(clientHandler);
+        }
     }
 
     public Map<String, List<ClientHandler>> getChatRooms() {
@@ -68,6 +69,23 @@ public class Server {
                     e.printStackTrace();
                 }
             }
+
+            public void printChatRooms() {
+                for (Map.Entry<String, List<ClientHandler>> entry : chatRooms.entrySet()) {
+                    String roomName = entry.getKey();
+                    List<ClientHandler> clients = entry.getValue();
+
+                    System.out.println(roomName);
+                    
+                    System.out.println("Sala: " + roomName);
+                    System.out.println("Membros:");
+                    for (ClientHandler client : clients) {
+                        System.out.println("- " + client.getClientUsername());
+                    }
+                    System.out.println();
+                }
+            }
+            
 
             public static void main (String[] args) throws IOException {
                 ServerSocket serverSocket = new ServerSocket(8080);
