@@ -34,19 +34,34 @@ public class Server {
             }
         }
 
+        public synchronized void addChatRoom(String roomName) {
+            if (!chatRooms.containsKey(roomName)) {
+                chatRooms.put(roomName, new ArrayList<>());
+                System.out.println("Nova sala criada: " + roomName);
+            } else {
+                System.out.println("A sala " + roomName + " já existe.");
+            }
+        }
+        
+
     public synchronized void changeChatRoom(ClientHandler clientHandler, String newChatRoom) {
         
-        if(!chatRooms.containsKey(newChatRoom)){
+        if (!chatRooms.containsKey(newChatRoom)) {
             chatRooms.put(newChatRoom, new ArrayList<>());
         }
-
+    
+        List<ClientHandler> currentRoom = chatRooms.get(clientHandler.getCurrentChatRoom());
+        currentRoom.remove(clientHandler);
+    
         List<ClientHandler> newRoom = chatRooms.get(newChatRoom);
         newRoom.add(clientHandler);
+    
         clientHandler.setCurrentChatRoom(newChatRoom);
         }
 
     public void addClienToChatRoom(ClientHandler clientHandler, String chatRoom){
         chatRooms.computeIfAbsent(chatRoom, k -> new ArrayList<>()).add(clientHandler);
+        
     }
 
     public void removeClientFromChatRoom(ClientHandler clientHandler, String chatRoom){
@@ -75,7 +90,7 @@ public class Server {
                     String roomName = entry.getKey();
                     List<ClientHandler> clients = entry.getValue();
 
-                    System.out.println(roomName);
+                    
                     
                     System.out.println("Sala: " + roomName);
                     System.out.println("Membros:");
